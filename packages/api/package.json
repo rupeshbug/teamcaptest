@@ -19,6 +19,7 @@
     "@teamcap/db": "workspace:*",
     "@teamcap/env": "workspace:*",
     "dotenv": "catalog:",
+    "drizzle-orm": "^0.45.1",
     "zod": "catalog:"
   },
   "devDependencies": {

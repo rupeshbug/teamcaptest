@@ -1,29 +1,11 @@
-import {
-  SignInButton,
-  useClerk,
-  useOrganization,
-  useOrganizationList,
-  useUser,
-} from "@clerk/tanstack-react-start";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { SignInButton, useUser } from "@clerk/tanstack-react-start";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import type { FormEvent } from "react";
 import { Button } from "@teamcap/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@teamcap/ui/components/card";
-import { Input } from "@teamcap/ui/components/input";
-import { Label } from "@teamcap/ui/components/label";
-import { Skeleton } from "@teamcap/ui/components/skeleton";
-import { cn } from "@teamcap/ui/lib/utils";
-import { toast } from "sonner";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@teamcap/ui/components/card";
 
-import { client } from "@/utils/orpc";
+import Loader from "@/components/loader";
+import RichTextViewer from "@/components/rich-text-viewer";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/dashboard")({
@@ -32,303 +14,257 @@ export const Route = createFileRoute("/dashboard")({
 
 function RouteComponent() {
   const user = useUser();
-  const clerk = useClerk();
-  const { organization } = useOrganization();
-  const { userMemberships, isLoaded: organizationsLoaded } =
-    useOrganizationList({
-      userMemberships: {
-        infinite: true,
-      },
-    });
-  const [teamName, setTeamName] = useState("");
-  const [teamSlug, setTeamSlug] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"org:member" | "org:admin">(
-    "org:member",
-  );
-
-  // const nameFromParts = [user.user?.firstName, user.user?.lastName]
-  //   .filter(Boolean)
-  //   .join(" ");
-  // const displayName =
-  //   user.user?.fullName ||
-  //   nameFromParts ||
-  //   user.user?.username ||
-  //   user.user?.primaryEmailAddress?.emailAddress ||
-  //   user.user?.primaryPhoneNumber?.phoneNumber ||
-  //   "User";
-
-  // const privateData = useQuery({
-  //   ...orpc.privateData.queryOptions(),
-  //   enabled: user.isLoaded && !!user.user,
-  // });
-
-  const createTeamMutation = useMutation({
-    mutationFn: (input: { name: string; slug?: string }) =>
-      client.createTeam(input),
-    onSuccess: async (createdTeam) => {
-      await clerk.setActive({ organization: createdTeam.id });
-      setTeamName("");
-      setTeamSlug("");
-      await userMemberships.revalidate?.();
-      toast.success(`Created ${createdTeam.name}`);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Could not create team.");
-    },
-  });
-
-  const inviteTeamMemberMutation = useMutation({
-    mutationFn: (input: {
-      organizationId: string;
-      emailAddress: string;
-      role: "org:member" | "org:admin";
-    }) => client.inviteTeamMember(input),
-    onSuccess: (invitation) => {
-      setInviteEmail("");
-      setInviteRole("org:member");
-      toast.success(`Invitation sent to ${invitation.emailAddress}`);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Could not send invitation.");
-    },
+  const overview = useQuery({
+    ...orpc.workspaceOverview.queryOptions(),
+    enabled: user.isLoaded && !!user.user,
   });
 
   if (!user.isLoaded) {
-    return (
-      <div className="flex w-full flex-col gap-6 px-0 py-6">
-        <Card>
-          <CardHeader className="gap-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-full max-w-xl" />
-          </CardHeader>
-        </Card>
-      </div>
-    );
+    return <Loader />;
   }
 
   if (!user.user) {
     return (
-      <div className="p-6">
-        <SignInButton mode="modal">
-          <Button>Sign in</Button>
-        </SignInButton>
+      <div className="flex w-full flex-col gap-6 py-6">
+        <Card>
+          <CardHeader>
+            <CardDescription className="uppercase tracking-[0.2em]">Team</CardDescription>
+            <CardTitle className="text-2xl">Sign in to view your founder workspace</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SignInButton mode="modal">
+              <Button>Sign in</Button>
+            </SignInButton>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const membershipCount = userMemberships.data?.length ?? 0;
+  if (overview.isLoading || !overview.data) {
+    return <Loader />;
+  }
 
-  const handleCreateTeam = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const normalizedName = teamName.trim();
-    const normalizedSlug = normalizeSlug(teamSlug);
-
-    if (!normalizedName) {
-      toast.error("Team name is required.");
-      return;
-    }
-
-    createTeamMutation.mutate({
-      name: normalizedName,
-      slug: normalizedSlug || undefined,
-    });
-  };
-
-  const handleInviteMember = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!organization?.id) {
-      toast.error("Choose a team before sending invites.");
-      return;
-    }
-
-    inviteTeamMemberMutation.mutate({
-      organizationId: organization.id,
-      emailAddress: inviteEmail.trim(),
-      role: inviteRole,
-    });
-  };
+  const data = overview.data;
 
   return (
-    <div className="flex w-full flex-col gap-6 px-0 py-6">
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="flex w-full flex-col gap-6 py-6">
+      <Card>
+        <CardHeader>
+          <CardDescription className="uppercase tracking-[0.2em]">Founder Workspace</CardDescription>
+          <CardTitle className="text-3xl">{data.workspace.name}</CardTitle>
+          <CardDescription>{data.workspace.summary}</CardDescription>
+          <CardDescription>
+            Stage: {formatToken(data.workspace.fundingStage)}. Approved equity allocated:{" "}
+            {formatBasisPoints(data.counts.approvedEquityBasisPoints)}.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Founders" value={String(data.counts.founders)} detail="Require unanimous approval for task equity" />
+        <MetricCard label="Founding Community" value={String(data.counts.community)} detail="Eligible for equity through approved work" />
+        <MetricCard label="Employees" value={String(data.counts.employees)} detail="Invited into custom operating roles" />
+        <MetricCard label="Pending Invites" value={String(data.counts.pendingInvites)} detail="Cofounders and employees still outstanding" />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <Card>
           <CardHeader>
-            <CardDescription className="uppercase tracking-[0.2em]">
-              Create Team
-            </CardDescription>
-            <CardTitle className="text-2xl">Start a new workspace</CardTitle>
-            <CardDescription>
-              The creator becomes the first admin and can invite everyone else.
-            </CardDescription>
+            <CardDescription className="uppercase tracking-[0.2em]">People</CardDescription>
+            <CardTitle className="text-2xl">Founding roster and custom roles</CardTitle>
           </CardHeader>
-          <CardContent>
-            <form className="flex flex-col gap-4" onSubmit={handleCreateTeam}>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="team-name">Team name</Label>
-                <Input
-                  id="team-name"
-                  placeholder="Design Ops"
-                  value={teamName}
-                  onChange={(event) => setTeamName(event.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="team-slug">Team slug</Label>
-                <Input
-                  id="team-slug"
-                  placeholder="design-ops"
-                  value={teamSlug}
-                  onChange={(event) => setTeamSlug(event.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Button type="submit" disabled={createTeamMutation.isPending}>
-                  {createTeamMutation.isPending ? "Creating..." : "Create team"}
-                </Button>
-              </div>
-            </form>
+          <CardContent className="grid gap-6 lg:grid-cols-3">
+            <MemberColumn title="Founders" description="Own approvals and founder governance." members={data.members.founders} />
+            <MemberColumn title="Founding Community" description="Eligible for equity through approved strategic contribution." members={data.members.community} />
+            <MemberColumn title="Employees" description="Custom-role teammates without founding privileges." members={data.members.employees} />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardDescription className="uppercase tracking-[0.2em]">
-              Your Teams
-            </CardDescription>
-            <CardTitle className="text-2xl">
-              {organizationsLoaded
-                ? `${membershipCount} connected workspace${membershipCount === 1 ? "" : "s"}`
-                : "Loading teams"}
-            </CardTitle>
+            <CardDescription className="uppercase tracking-[0.2em]">Invites</CardDescription>
+            <CardTitle className="text-2xl">Pending member invitations</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {userMemberships.data?.map((membership) => {
-              const isActive = membership.organization.id === organization?.id;
-
-              return (
-                <Button
-                  key={membership.id}
-                  type="button"
-                  variant={isActive ? "default" : "outline"}
-                  className="h-auto w-full justify-between px-3 py-3 text-left"
-                  onClick={() =>
-                    clerk.setActive({
-                      organization: membership.organization.id,
-                    })
-                  }
-                >
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium">
-                      {membership.organization.name}
-                    </p>
-                    <p className="text-muted-foreground">{membership.role}</p>
-                  </div>
-                  <span className="text-muted-foreground uppercase tracking-[0.2em]">
-                    {isActive ? "Active" : "Switch"}
-                  </span>
-                </Button>
-              );
-            })}
-
-            {!userMemberships.data?.length ? (
-              <div className="border-border bg-muted/30 text-muted-foreground rounded-none border border-dashed px-4 py-6">
-                You do not belong to a team yet. Create one to get started.
+            {data.invites.map((invite) => (
+              <div key={invite.id} className="border-border flex items-start justify-between gap-4 border p-3">
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium">{invite.email}</p>
+                  <p className="text-muted-foreground">
+                    {formatToken(invite.inviteType)}
+                    {invite.customRoleTitle ? `, ${invite.customRoleTitle}` : ""}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Equity eligible: {invite.equityEligible ? "Yes" : "No"}
+                    {invite.invitedBy ? `, invited by ${invite.invitedBy}` : ""}
+                  </p>
+                </div>
+                <p className="text-muted-foreground uppercase tracking-[0.2em]">{invite.status}</p>
               </div>
-            ) : null}
+            ))}
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardDescription className="uppercase tracking-[0.2em]">
-            Invite Members
-          </CardDescription>
-          <CardTitle className="text-2xl">
-            {organization
-              ? `Invite people to ${organization.name}`
-              : "Choose a team to invite members"}
-          </CardTitle>
-          <CardDescription>
-            Invitations are sent through Clerk Organizations and only team
-            admins can send them.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="grid gap-4 md:grid-cols-[1.4fr_0.8fr_auto]"
-            onSubmit={handleInviteMember}
-          >
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="invite-email">Email</Label>
-              <Input
-                id="invite-email"
-                placeholder="teammate@company.com"
-                value={inviteEmail}
-                onChange={(event) => setInviteEmail(event.target.value)}
-                disabled={!organization}
-              />
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <Card>
+          <CardHeader>
+            <CardDescription className="uppercase tracking-[0.2em]">Cap Table</CardDescription>
+            <CardTitle className="text-2xl">Equity distribution preview</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {data.capTablePreview.map((entry) => (
+              <div key={entry.memberId} className="border-border flex flex-col gap-2 border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{entry.fullName}</p>
+                    <p className="text-muted-foreground">{entry.roleTitle}</p>
+                  </div>
+                  <p className="text-right font-medium">{entry.ownershipPercent}%</p>
+                </div>
+                <div className="bg-muted h-2 w-full">
+                  <div className="bg-primary h-2" style={{ width: `${Math.min(entry.ownershipPercent, 100)}%` }} />
+                </div>
+                <p className="text-muted-foreground">
+                  {formatBasisPoints(entry.approvedBasisPoints)}
+                  {entry.cashInvestmentCents ? `, ${formatCurrency(entry.cashInvestmentCents)} invested` : ""}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardDescription className="uppercase tracking-[0.2em]">Equity Sources</CardDescription>
+            <CardTitle className="text-2xl">How ownership is earned</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-3">
+            {data.equitySummary.bySource.map((source) => (
+              <div key={source.sourceType} className="border-border flex flex-col gap-2 border p-3">
+                <p className="font-medium">{source.label}</p>
+                <p className="text-muted-foreground">{formatToken(source.sourceType)}</p>
+                <p>{formatBasisPoints(source.basisPoints)}</p>
+                <p className="text-muted-foreground">
+                  {source.cashInvestmentCents ? formatCurrency(source.cashInvestmentCents) : "No direct cash component"}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {data.activeContract ? (
+        <Card>
+          <CardHeader>
+            <CardDescription className="uppercase tracking-[0.2em]">Contract</CardDescription>
+            <CardTitle className="text-2xl">{data.activeContract.title}</CardTitle>
+            <CardDescription>{data.activeContract.subtitle}</CardDescription>
+            <CardDescription>
+              Status: {formatToken(data.activeContract.status)}
+              {data.activeContract.requiresFounderApproval ? ", requires founder approval" : ""}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+            <div className="border-border border p-4">
+              <RichTextViewer blocks={data.activeContract.content} />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label>Role</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant={inviteRole === "org:member" ? "default" : "outline"}
-                  className={cn(
-                    "flex-1",
-                    !organization && "pointer-events-none",
-                  )}
-                  disabled={!organization}
-                  onClick={() => setInviteRole("org:member")}
-                >
-                  Member
-                </Button>
-                <Button
-                  type="button"
-                  variant={inviteRole === "org:admin" ? "default" : "outline"}
-                  className={cn(
-                    "flex-1",
-                    !organization && "pointer-events-none",
-                  )}
-                  disabled={!organization}
-                  onClick={() => setInviteRole("org:admin")}
-                >
-                  Admin
-                </Button>
+            <div className="grid gap-6">
+              <div className="flex flex-col gap-3">
+                <p className="font-medium">Comments</p>
+                {data.activeContract.comments.map((comment) => (
+                  <div key={comment.id} className="border-border border p-3">
+                    <p className="mb-2 font-medium">{comment.authorName}</p>
+                    <RichTextViewer blocks={comment.content} />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <p className="font-medium">Approvals</p>
+                {data.activeContract.approvals.map((approval) => (
+                  <div key={approval.memberId} className="border-border flex flex-col gap-1 border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-medium">{approval.memberName}</p>
+                      <p className="text-muted-foreground uppercase tracking-[0.2em]">{approval.decision}</p>
+                    </div>
+                    {approval.note ? <p className="text-muted-foreground">{approval.note}</p> : null}
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className="flex items-end">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={!organization || inviteTeamMemberMutation.isPending}
-              >
-                {inviteTeamMemberMutation.isPending
-                  ? "Sending..."
-                  : "Send invite"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }
 
-function normalizeSlug(value: string) {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/-+/g, "-");
-  return normalized.replace(/^-|-$/g, "");
+function MetricCard({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardDescription className="uppercase tracking-[0.2em]">{label}</CardDescription>
+        <CardTitle className="text-3xl">{value}</CardTitle>
+        <CardDescription>{detail}</CardDescription>
+      </CardHeader>
+    </Card>
+  );
+}
+
+function MemberColumn({
+  title,
+  description,
+  members,
+}: {
+  title: string;
+  description: string;
+  members: Array<{
+    id: string;
+    fullName: string;
+    roleTitle: string;
+    customRoleTitle: string | null;
+    bio: string;
+    equityEligible: boolean;
+  }>;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <p className="font-medium">{title}</p>
+        <p className="text-muted-foreground">{description}</p>
+      </div>
+      {members.map((member) => (
+        <div key={member.id} className="border-border flex flex-col gap-2 border p-3">
+          <div>
+            <p className="font-medium">{member.fullName}</p>
+            <p className="text-muted-foreground">{member.customRoleTitle || member.roleTitle}</p>
+          </div>
+          <p className="text-muted-foreground">{member.bio}</p>
+          <p className="text-muted-foreground">Equity eligible: {member.equityEligible ? "Yes" : "No"}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatToken(value: string) {
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatBasisPoints(value: number) {
+  return `${(value / 100).toFixed(2)}%`;
+}
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
 }

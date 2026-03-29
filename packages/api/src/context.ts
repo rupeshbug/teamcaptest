@@ -1,5 +1,6 @@
 type ClerkContextAuth = {
   userId: string | null;
+  orgId: string | null;
 };
 
 type ClerkRequestContext = {
@@ -7,8 +8,10 @@ type ClerkRequestContext = {
   session: null;
 };
 
-function toClerkContextAuth(auth: { userId: string | null } | null): ClerkContextAuth | null {
-  return auth ? { userId: auth.userId } : null;
+function toClerkContextAuth(
+  auth: { userId: string | null; orgId?: string | null } | null,
+): ClerkContextAuth | null {
+  return auth ? { userId: auth.userId, orgId: auth.orgId ?? null } : null;
 }
 
 import { createClerkClient } from "@clerk/backend";

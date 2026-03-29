@@ -3,6 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 
 import { clerkClient } from "../context";
+import { getWorkspaceAnalytics, getWorkspaceOverview, getWorkspaceTasks } from "../lib/workspace";
 import { protectedProcedure, publicProcedure } from "../index";
 
 const createTeamInput = z.object({
@@ -32,6 +33,15 @@ export const appRouter = {
       message: "This is private",
       userId: context.auth?.userId,
     };
+  }),
+  workspaceOverview: protectedProcedure.handler(async ({ context }) => {
+    return await getWorkspaceOverview(context.auth.orgId);
+  }),
+  workspaceTasks: protectedProcedure.handler(async ({ context }) => {
+    return await getWorkspaceTasks(context.auth.orgId);
+  }),
+  workspaceAnalytics: protectedProcedure.handler(async ({ context }) => {
+    return await getWorkspaceAnalytics(context.auth.orgId);
   }),
   createTeam: protectedProcedure.input(createTeamInput).handler(
     async ({ context, input }): Promise<{ id: string; name: string; slug: string | null }> => {
