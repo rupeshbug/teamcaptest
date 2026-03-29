@@ -14,7 +14,7 @@ function toClerkContextAuth(auth: { userId: string | null } | null): ClerkContex
 import { createClerkClient } from "@clerk/backend";
 import { env } from "@teamcap/env/server";
 
-const clerkClient = createClerkClient({
+export const clerkClient = createClerkClient({
   secretKey: env.CLERK_SECRET_KEY,
   publishableKey: env.CLERK_PUBLISHABLE_KEY,
 });
