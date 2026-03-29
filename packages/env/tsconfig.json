@@ -1,0 +1,3 @@
+{
+  "extends": "@teamcap/config/tsconfig.base.json"
+}

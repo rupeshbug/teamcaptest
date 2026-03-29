@@ -1,0 +1,29 @@
+{
+  "name": "@teamcap/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@clerk/backend": "^3.2.1",
+    "@orpc/client": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "@orpc/zod": "catalog:",
+    "@teamcap/db": "workspace:*",
+    "@teamcap/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@teamcap/config": "workspace:*",
+    "hono": "catalog:",
+    "typescript": "^5"
+  }
+}
