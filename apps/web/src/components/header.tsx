@@ -1,26 +1,39 @@
-import { Link } from "@tanstack/react-router";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/tanstack-react-start";
+import { Button } from "@teamcap/ui/components/button";
+import { SidebarTrigger } from "@teamcap/ui/components/sidebar";
+
+import ThemeToggle from "./theme-toggle";
 
 export default function Header() {
-  const links = [
-    { to: "/", label: "Home" },
-    { to: "/dashboard", label: "Dashboard" },
-  ] as const;
+  const { isLoaded, user } = useUser();
 
   return (
-    <div>
-      <div className="flex flex-row items-center justify-between px-2 py-1">
-        <nav className="flex gap-4 text-lg">
-          {links.map(({ to, label }) => {
-            return (
-              <Link key={to} to={to}>
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="flex items-center gap-2"></div>
+    <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 flex w-full min-w-0 items-center justify-between border-b px-4 py-3 backdrop-blur">
+      <div className="flex min-w-0 items-center gap-3">
+        <SidebarTrigger className="md:hidden" />
+        <SidebarTrigger className="hidden md:inline-flex" />
+        <div className="flex min-w-0 flex-col gap-1">
+          <p className="text-muted-foreground text-[11px] uppercase tracking-[0.25em]">Teamcap</p>
+          <h1 className="truncate text-sm font-medium">Workspace</h1>
+        </div>
       </div>
-      <hr />
-    </div>
+
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+
+        {isLoaded && user ? (
+          <UserButton />
+        ) : (
+          <>
+            <SignInButton mode="modal">
+              <Button variant="outline">Sign in</Button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <Button>Sign up</Button>
+            </SignUpButton>
+          </>
+        )}
+      </div>
+    </header>
   );
 }

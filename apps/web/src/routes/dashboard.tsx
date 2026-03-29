@@ -92,7 +92,7 @@ function RouteComponent() {
 
   if (!user.isLoaded) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+      <div className="flex w-full flex-col gap-6 px-0 py-6">
         <Card>
           <CardHeader className="gap-2">
             <Skeleton className="h-4 w-24" />
@@ -149,11 +149,11 @@ function RouteComponent() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+    <div className="flex w-full flex-col gap-6 px-0 py-6">
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-2">
-            <CardDescription className="uppercase tracking-[0.2em]">Workspace</CardDescription>
+            <CardDescription className="uppercase tracking-[0.2em]">Team</CardDescription>
             <CardTitle className="text-3xl">Welcome {displayName}</CardTitle>
             <CardDescription>
               Create a team, switch between teams, and invite people into the active workspace.

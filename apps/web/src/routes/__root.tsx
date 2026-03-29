@@ -1,9 +1,33 @@
 import { ClerkProvider, useAuth } from "@clerk/tanstack-react-start";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRouteWithContext,
+  Link,
+  useRouterState,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader as AppSidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+} from "@teamcap/ui/components/sidebar";
 import { Toaster } from "@teamcap/ui/components/sonner";
+import { TooltipProvider } from "@teamcap/ui/components/tooltip";
+import { BarChart3, CheckSquare, Users } from "lucide-react";
+import { ThemeProvider } from "next-themes";
 import { useEffect } from "react";
 
 import { setClerkAuthTokenGetter } from "@/utils/clerk-auth";
@@ -57,23 +81,83 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootDocument,
 });
 
+const navigation = [
+  { to: "/dashboard", label: "Team", icon: Users },
+  { to: "/tasks", label: "Tasks", icon: CheckSquare },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+] as const;
+
 function RootDocument() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+
   return (
     <ClerkProvider>
       <ClerkApiAuthBridge />
-      <html lang="en" className="dark">
+      <html lang="en" suppressHydrationWarning>
         <head>
           <HeadContent />
         </head>
         <body>
-          <div className="grid h-svh grid-rows-[auto_1fr]">
-            <Header />
-            <Outlet />
-          </div>
-          <Toaster richColors />
-          <TanStackRouterDevtools position="bottom-left" />
-          <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
-          <Scripts />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <TooltipProvider>
+              <SidebarProvider>
+                <div className="bg-background text-foreground flex h-svh w-full min-w-0 overflow-hidden">
+                  <Sidebar collapsible="icon" variant="sidebar">
+                    <AppSidebarHeader>
+                      <div className="flex flex-col gap-1 px-2 py-1">
+                        <p className="text-sidebar-foreground/60 text-[11px] uppercase tracking-[0.25em]">
+                          Navigation
+                        </p>
+                        <p className="text-sm font-medium">Team workspace</p>
+                      </div>
+                    </AppSidebarHeader>
+                    <SidebarContent>
+                      <SidebarGroup>
+                        <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                          <SidebarMenu>
+                            {navigation.map(({ to, label, icon: Icon }) => (
+                              <SidebarMenuItem key={to}>
+                                <SidebarMenuButton
+                                  render={<Link to={to} />}
+                                  isActive={pathname === to}
+                                  tooltip={label}
+                                >
+                                  <Icon />
+                                  <span>{label}</span>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            ))}
+                          </SidebarMenu>
+                        </SidebarGroupContent>
+                      </SidebarGroup>
+                    </SidebarContent>
+                    <SidebarRail />
+                  </Sidebar>
+                  <SidebarInset className="w-full min-w-0">
+                    <Header />
+                    <main className="flex min-h-0 w-full min-w-0 flex-1 overflow-auto px-4 py-4 md:px-6 md:py-6">
+                      <Outlet />
+                    </main>
+                  </SidebarInset>
+                </div>
+              </SidebarProvider>
+            </TooltipProvider>
+            <Toaster richColors />
+            <TanStackRouterDevtools position="bottom-left" />
+            <ReactQueryDevtools
+              position="bottom"
+              buttonPosition="bottom-right"
+            />
+            <Scripts />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
