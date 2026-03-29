@@ -11,6 +11,18 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { Button } from "@teamcap/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@teamcap/ui/components/card";
+import { Input } from "@teamcap/ui/components/input";
+import { Label } from "@teamcap/ui/components/label";
+import { Skeleton } from "@teamcap/ui/components/skeleton";
+import { cn } from "@teamcap/ui/lib/utils";
 import { toast } from "sonner";
 
 import { client } from "@/utils/orpc";
@@ -79,13 +91,25 @@ function RouteComponent() {
   });
 
   if (!user.isLoaded) {
-    return <div className="p-6">Loading...</div>;
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+        <Card>
+          <CardHeader className="gap-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-full max-w-xl" />
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
   if (!user.user) {
     return (
       <div className="p-6">
-        <SignInButton />
+        <SignInButton mode="modal">
+          <Button>Sign in</Button>
+        </SignInButton>
       </div>
     );
   }
@@ -126,158 +150,171 @@ function RouteComponent() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
-      <section className="flex flex-col gap-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <p className="text-sm uppercase tracking-[0.2em] text-black/50">Workspace</p>
-          <h1 className="text-3xl font-semibold text-black">Welcome {displayName}</h1>
-          <p className="max-w-2xl text-sm text-black/65">
-            Create a team, switch between teams, and invite people into the active workspace.
-          </p>
-          <p className="text-sm text-black/60">API: {privateData.data?.message ?? "Loading private session..."}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <OrganizationSwitcher
-            hidePersonal
-            appearance={{
-              elements: {
-                organizationSwitcherTrigger:
-                  "rounded-full border border-black/15 bg-white px-4 py-2 shadow-none",
-              },
-            }}
-          />
-          <UserButton />
-        </div>
-      </section>
+      <Card>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-2">
+            <CardDescription className="uppercase tracking-[0.2em]">Workspace</CardDescription>
+            <CardTitle className="text-3xl">Welcome {displayName}</CardTitle>
+            <CardDescription>
+              Create a team, switch between teams, and invite people into the active workspace.
+            </CardDescription>
+            <CardDescription>
+              API: {privateData.data?.message ?? "Loading private session..."}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <OrganizationSwitcher
+              hidePersonal
+              appearance={{
+                elements: {
+                  organizationSwitcherTrigger:
+                    "border-border bg-background text-foreground hover:bg-muted h-8 rounded-none border px-2.5 text-xs shadow-none",
+                },
+              }}
+            />
+            <UserButton />
+          </div>
+        </CardHeader>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl border border-black/10 bg-[#f7f3ea] p-6">
-          <div className="mb-5 space-y-2">
-            <p className="text-sm uppercase tracking-[0.2em] text-black/45">Create Team</p>
-            <h2 className="text-2xl font-semibold text-black">Start a new workspace</h2>
-            <p className="text-sm text-black/60">
+        <Card>
+          <CardHeader>
+            <CardDescription className="uppercase tracking-[0.2em]">Create Team</CardDescription>
+            <CardTitle className="text-2xl">Start a new workspace</CardTitle>
+            <CardDescription>
               The creator becomes the first admin and can invite everyone else.
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="flex flex-col gap-4" onSubmit={handleCreateTeam}>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="team-name">Team name</Label>
+                <Input
+                  id="team-name"
+                  placeholder="Design Ops"
+                  value={teamName}
+                  onChange={(event) => setTeamName(event.target.value)}
+                />
+              </div>
 
-          <form className="space-y-4" onSubmit={handleCreateTeam}>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-black">Team name</span>
-              <input
-                className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 outline-none transition focus:border-black"
-                placeholder="Design Ops"
-                value={teamName}
-                onChange={(event) => setTeamName(event.target.value)}
-              />
-            </label>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="team-slug">Team slug</Label>
+                <Input
+                  id="team-slug"
+                  placeholder="design-ops"
+                  value={teamSlug}
+                  onChange={(event) => setTeamSlug(event.target.value)}
+                />
+              </div>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-black">Team slug</span>
-              <input
-                className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 outline-none transition focus:border-black"
-                placeholder="design-ops"
-                value={teamSlug}
-                onChange={(event) => setTeamSlug(event.target.value)}
-              />
-            </label>
+              <div className="flex items-center gap-3">
+                <Button type="submit" disabled={createTeamMutation.isPending}>
+                  {createTeamMutation.isPending ? "Creating..." : "Create team"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-            <button
-              type="submit"
-              className="inline-flex rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/85 disabled:cursor-not-allowed disabled:bg-black/40"
-              disabled={createTeamMutation.isPending}
-            >
-              {createTeamMutation.isPending ? "Creating..." : "Create team"}
-            </button>
-          </form>
-        </section>
-
-        <section className="rounded-3xl border border-black/10 bg-[#eef6ff] p-6">
-          <div className="mb-5 space-y-2">
-            <p className="text-sm uppercase tracking-[0.2em] text-black/45">Your Teams</p>
-            <h2 className="text-2xl font-semibold text-black">
+        <Card>
+          <CardHeader>
+            <CardDescription className="uppercase tracking-[0.2em]">Your Teams</CardDescription>
+            <CardTitle className="text-2xl">
               {organizationsLoaded ? `${membershipCount} connected workspace${membershipCount === 1 ? "" : "s"}` : "Loading teams"}
-            </h2>
-          </div>
-
-          <div className="space-y-3">
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
             {userMemberships.data?.map((membership) => {
               const isActive = membership.organization.id === organization?.id;
 
               return (
-                <button
+                <Button
                   key={membership.id}
                   type="button"
-                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
-                    isActive ? "border-black bg-black text-white" : "border-black/10 bg-white text-black hover:border-black/30"
-                  }`}
+                  variant={isActive ? "default" : "outline"}
+                  className="h-auto w-full justify-between px-3 py-3 text-left"
                   onClick={() => clerk.setActive({ organization: membership.organization.id })}
                 >
-                  <div>
+                  <div className="flex flex-col gap-1">
                     <p className="font-medium">{membership.organization.name}</p>
-                    <p className={`text-sm ${isActive ? "text-white/70" : "text-black/55"}`}>{membership.role}</p>
+                    <p className="text-muted-foreground">{membership.role}</p>
                   </div>
-                  <span className={`text-xs uppercase tracking-[0.2em] ${isActive ? "text-white/70" : "text-black/45"}`}>
+                  <span className="text-muted-foreground uppercase tracking-[0.2em]">
                     {isActive ? "Active" : "Switch"}
                   </span>
-                </button>
+                </Button>
               );
             })}
 
             {!userMemberships.data?.length ? (
-              <div className="rounded-2xl border border-dashed border-black/15 bg-white/70 px-4 py-6 text-sm text-black/55">
+              <div className="border-border bg-muted/30 text-muted-foreground rounded-none border border-dashed px-4 py-6">
                 You do not belong to a team yet. Create one to get started.
               </div>
             ) : null}
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       </div>
 
-      <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-        <div className="mb-5 space-y-2">
-          <p className="text-sm uppercase tracking-[0.2em] text-black/45">Invite Members</p>
-          <h2 className="text-2xl font-semibold text-black">
+      <Card>
+        <CardHeader>
+          <CardDescription className="uppercase tracking-[0.2em]">Invite Members</CardDescription>
+          <CardTitle className="text-2xl">
             {organization ? `Invite people to ${organization.name}` : "Choose a team to invite members"}
-          </h2>
-          <p className="text-sm text-black/60">
+          </CardTitle>
+          <CardDescription>
             Invitations are sent through Clerk Organizations and only team admins can send them.
-          </p>
-        </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="grid gap-4 md:grid-cols-[1.4fr_0.8fr_auto]" onSubmit={handleInviteMember}>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="invite-email">Email</Label>
+              <Input
+                id="invite-email"
+                placeholder="teammate@company.com"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.target.value)}
+                disabled={!organization}
+              />
+            </div>
 
-        <form className="grid gap-4 md:grid-cols-[1.4fr_0.8fr_auto]" onSubmit={handleInviteMember}>
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-black">Email</span>
-            <input
-              className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 outline-none transition focus:border-black"
-              placeholder="teammate@company.com"
-              value={inviteEmail}
-              onChange={(event) => setInviteEmail(event.target.value)}
-              disabled={!organization}
-            />
-          </label>
+            <div className="flex flex-col gap-2">
+              <Label>Role</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant={inviteRole === "org:member" ? "default" : "outline"}
+                  className={cn("flex-1", !organization && "pointer-events-none")}
+                  disabled={!organization}
+                  onClick={() => setInviteRole("org:member")}
+                >
+                  Member
+                </Button>
+                <Button
+                  type="button"
+                  variant={inviteRole === "org:admin" ? "default" : "outline"}
+                  className={cn("flex-1", !organization && "pointer-events-none")}
+                  disabled={!organization}
+                  onClick={() => setInviteRole("org:admin")}
+                >
+                  Admin
+                </Button>
+              </div>
+            </div>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-black">Role</span>
-            <select
-              className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 outline-none transition focus:border-black"
-              value={inviteRole}
-              onChange={(event) => setInviteRole(event.target.value as "org:member" | "org:admin")}
-              disabled={!organization}
-            >
-              <option value="org:member">Member</option>
-              <option value="org:admin">Admin</option>
-            </select>
-          </label>
-
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="inline-flex w-full justify-center rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/85 disabled:cursor-not-allowed disabled:bg-black/40"
-              disabled={!organization || inviteTeamMemberMutation.isPending}
-            >
-              {inviteTeamMemberMutation.isPending ? "Sending..." : "Send invite"}
-            </button>
-          </div>
-        </form>
-      </section>
+            <div className="flex items-end">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!organization || inviteTeamMemberMutation.isPending}
+              >
+                {inviteTeamMemberMutation.isPending ? "Sending..." : "Send invite"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
