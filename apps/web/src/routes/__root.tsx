@@ -82,9 +82,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 const navigation = [
-  { to: "/dashboard", label: "Team", icon: Users },
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/dashboard", label: "Team", icon: Users },
 ] as const;
 
 function RootDocument() {

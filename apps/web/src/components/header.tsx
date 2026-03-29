@@ -1,4 +1,10 @@
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/tanstack-react-start";
+import {
+  OrganizationSwitcher,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useUser,
+} from "@clerk/tanstack-react-start";
 import { Button } from "@teamcap/ui/components/button";
 import { SidebarTrigger } from "@teamcap/ui/components/sidebar";
 
@@ -22,7 +28,18 @@ export default function Header() {
         <ThemeToggle />
 
         {isLoaded && user ? (
-          <UserButton />
+          <>
+            <OrganizationSwitcher
+              hidePersonal
+              appearance={{
+                elements: {
+                  organizationSwitcherTrigger:
+                    "border-border bg-background text-foreground hover:bg-muted h-8 rounded-none border px-2.5 text-xs shadow-none",
+                },
+              }}
+            />
+            <UserButton />
+          </>
         ) : (
           <>
             <SignInButton mode="modal">

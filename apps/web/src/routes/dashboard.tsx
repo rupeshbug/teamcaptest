@@ -1,7 +1,5 @@
 import {
-  OrganizationSwitcher,
   SignInButton,
-  UserButton,
   useClerk,
   useOrganization,
   useOrganizationList,
@@ -36,32 +34,38 @@ function RouteComponent() {
   const user = useUser();
   const clerk = useClerk();
   const { organization } = useOrganization();
-  const { userMemberships, isLoaded: organizationsLoaded } = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-    },
-  });
+  const { userMemberships, isLoaded: organizationsLoaded } =
+    useOrganizationList({
+      userMemberships: {
+        infinite: true,
+      },
+    });
   const [teamName, setTeamName] = useState("");
   const [teamSlug, setTeamSlug] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"org:member" | "org:admin">("org:member");
+  const [inviteRole, setInviteRole] = useState<"org:member" | "org:admin">(
+    "org:member",
+  );
 
-  const nameFromParts = [user.user?.firstName, user.user?.lastName].filter(Boolean).join(" ");
-  const displayName =
-    user.user?.fullName ||
-    nameFromParts ||
-    user.user?.username ||
-    user.user?.primaryEmailAddress?.emailAddress ||
-    user.user?.primaryPhoneNumber?.phoneNumber ||
-    "User";
+  // const nameFromParts = [user.user?.firstName, user.user?.lastName]
+  //   .filter(Boolean)
+  //   .join(" ");
+  // const displayName =
+  //   user.user?.fullName ||
+  //   nameFromParts ||
+  //   user.user?.username ||
+  //   user.user?.primaryEmailAddress?.emailAddress ||
+  //   user.user?.primaryPhoneNumber?.phoneNumber ||
+  //   "User";
 
-  const privateData = useQuery({
-    ...orpc.privateData.queryOptions(),
-    enabled: user.isLoaded && !!user.user,
-  });
+  // const privateData = useQuery({
+  //   ...orpc.privateData.queryOptions(),
+  //   enabled: user.isLoaded && !!user.user,
+  // });
 
   const createTeamMutation = useMutation({
-    mutationFn: (input: { name: string; slug?: string }) => client.createTeam(input),
+    mutationFn: (input: { name: string; slug?: string }) =>
+      client.createTeam(input),
     onSuccess: async (createdTeam) => {
       await clerk.setActive({ organization: createdTeam.id });
       setTeamName("");
@@ -150,37 +154,12 @@ function RouteComponent() {
 
   return (
     <div className="flex w-full flex-col gap-6 px-0 py-6">
-      <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-col gap-2">
-            <CardDescription className="uppercase tracking-[0.2em]">Team</CardDescription>
-            <CardTitle className="text-3xl">Welcome {displayName}</CardTitle>
-            <CardDescription>
-              Create a team, switch between teams, and invite people into the active workspace.
-            </CardDescription>
-            <CardDescription>
-              API: {privateData.data?.message ?? "Loading private session..."}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-3">
-            <OrganizationSwitcher
-              hidePersonal
-              appearance={{
-                elements: {
-                  organizationSwitcherTrigger:
-                    "border-border bg-background text-foreground hover:bg-muted h-8 rounded-none border px-2.5 text-xs shadow-none",
-                },
-              }}
-            />
-            <UserButton />
-          </div>
-        </CardHeader>
-      </Card>
-
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
-            <CardDescription className="uppercase tracking-[0.2em]">Create Team</CardDescription>
+            <CardDescription className="uppercase tracking-[0.2em]">
+              Create Team
+            </CardDescription>
             <CardTitle className="text-2xl">Start a new workspace</CardTitle>
             <CardDescription>
               The creator becomes the first admin and can invite everyone else.
@@ -219,9 +198,13 @@ function RouteComponent() {
 
         <Card>
           <CardHeader>
-            <CardDescription className="uppercase tracking-[0.2em]">Your Teams</CardDescription>
+            <CardDescription className="uppercase tracking-[0.2em]">
+              Your Teams
+            </CardDescription>
             <CardTitle className="text-2xl">
-              {organizationsLoaded ? `${membershipCount} connected workspace${membershipCount === 1 ? "" : "s"}` : "Loading teams"}
+              {organizationsLoaded
+                ? `${membershipCount} connected workspace${membershipCount === 1 ? "" : "s"}`
+                : "Loading teams"}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -234,10 +217,16 @@ function RouteComponent() {
                   type="button"
                   variant={isActive ? "default" : "outline"}
                   className="h-auto w-full justify-between px-3 py-3 text-left"
-                  onClick={() => clerk.setActive({ organization: membership.organization.id })}
+                  onClick={() =>
+                    clerk.setActive({
+                      organization: membership.organization.id,
+                    })
+                  }
                 >
                   <div className="flex flex-col gap-1">
-                    <p className="font-medium">{membership.organization.name}</p>
+                    <p className="font-medium">
+                      {membership.organization.name}
+                    </p>
                     <p className="text-muted-foreground">{membership.role}</p>
                   </div>
                   <span className="text-muted-foreground uppercase tracking-[0.2em]">
@@ -258,16 +247,24 @@ function RouteComponent() {
 
       <Card>
         <CardHeader>
-          <CardDescription className="uppercase tracking-[0.2em]">Invite Members</CardDescription>
+          <CardDescription className="uppercase tracking-[0.2em]">
+            Invite Members
+          </CardDescription>
           <CardTitle className="text-2xl">
-            {organization ? `Invite people to ${organization.name}` : "Choose a team to invite members"}
+            {organization
+              ? `Invite people to ${organization.name}`
+              : "Choose a team to invite members"}
           </CardTitle>
           <CardDescription>
-            Invitations are sent through Clerk Organizations and only team admins can send them.
+            Invitations are sent through Clerk Organizations and only team
+            admins can send them.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-4 md:grid-cols-[1.4fr_0.8fr_auto]" onSubmit={handleInviteMember}>
+          <form
+            className="grid gap-4 md:grid-cols-[1.4fr_0.8fr_auto]"
+            onSubmit={handleInviteMember}
+          >
             <div className="flex flex-col gap-2">
               <Label htmlFor="invite-email">Email</Label>
               <Input
@@ -285,7 +282,10 @@ function RouteComponent() {
                 <Button
                   type="button"
                   variant={inviteRole === "org:member" ? "default" : "outline"}
-                  className={cn("flex-1", !organization && "pointer-events-none")}
+                  className={cn(
+                    "flex-1",
+                    !organization && "pointer-events-none",
+                  )}
                   disabled={!organization}
                   onClick={() => setInviteRole("org:member")}
                 >
@@ -294,7 +294,10 @@ function RouteComponent() {
                 <Button
                   type="button"
                   variant={inviteRole === "org:admin" ? "default" : "outline"}
-                  className={cn("flex-1", !organization && "pointer-events-none")}
+                  className={cn(
+                    "flex-1",
+                    !organization && "pointer-events-none",
+                  )}
                   disabled={!organization}
                   onClick={() => setInviteRole("org:admin")}
                 >
@@ -309,7 +312,9 @@ function RouteComponent() {
                 className="w-full"
                 disabled={!organization || inviteTeamMemberMutation.isPending}
               >
-                {inviteTeamMemberMutation.isPending ? "Sending..." : "Send invite"}
+                {inviteTeamMemberMutation.isPending
+                  ? "Sending..."
+                  : "Send invite"}
               </Button>
             </div>
           </form>
@@ -320,6 +325,10 @@ function RouteComponent() {
 }
 
 function normalizeSlug(value: string) {
-  const normalized = value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-");
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-");
   return normalized.replace(/^-|-$/g, "");
 }
